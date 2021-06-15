@@ -9,7 +9,7 @@ class DroneAgent:
 
     def __init__(self, vector_shape=[10], image_shape=[36, 64, 3], raycast_shape=[16],
                  num_action=27, discount_factor=0.99, gradient_clip_norm=40.0,
-                 reward_clipping='abs_one',
+                 reward_clipping='softmax_asymmetric',
                  start_learning_rate=0.0001, end_learning_rate=0.0,
                  learning_frame=100000000000000,
                  model_name='learner', learner_name='learner'):
@@ -38,6 +38,8 @@ class DroneAgent:
 
                 if reward_clipping == 'abs_one':
                     self.clipped_r_ph = tf.clip_by_value(self.r, -1.0, 1.0)
+                elif reward_clipping == 'softmax_asymmetric':
+                    self.clipped_r_ph = tf.where(self.r_ph < 0, .3 * squeezed, squeezed) * 5.
                 else:
                     self.clipped_r_ph = self.r
 
