@@ -39,8 +39,9 @@ class DroneAgent:
                 if reward_clipping == 'abs_one':
                     self.clipped_r_ph = tf.clip_by_value(self.r, -1.0, 1.0)
                 elif reward_clipping == 'softmax_asymmetric':
-                    self.clipped_r_ph = tf.where(self.r_ph < 0, .3 * squeezed, squeezed) * 5.
-                else:
+                    squeezed = tf.tanh(self.r / 5.0)
+                    self.clipped_r_ph = tf.where(self.r < 0, .3 * squeezed, squeezed) * 5.
+                elif reward_clipping == None:
                     self.clipped_r_ph = self.r
 
                 self.discounts = tf.to_float(~self.d) * discount_factor
@@ -78,8 +79,8 @@ class DroneAgent:
         self.global_to_session = misc.copy_src_to_dst(learner_name, model_name)
         self.saver = tf.train.Saver()
 
-    def save_weights(self, path):
-        self.saver.save(self.sess, path)
+    def save_weights(self, path, step):
+        self.saver.save(self.sess, path, global_step=step)
 
     def load_weights(self, path):
         self.saver.restore(self.sess, path)
