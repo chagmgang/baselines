@@ -1,35 +1,34 @@
-import time
-import tensorflow as tf
-import numpy as np
+from baselines.env.drone import Drone
+from baselines.agent.drone_impala import DroneAgent
+from baselines.distributed_queue.drone_impala import Traj
+from baselines.distributed_queue.drone_impala import FIFOQueue
+from baselines.distributed_queue.drone_impala import GlobalBuffer
+from baselines.misc import convert_action
 
 from tensorboardX import SummaryWriter
 
-from baselines import misc
-from baselines.env.wrappers import make_float_env
-from baselines.agent.impala import Agent
-from baselines.distributed_queue.impala import Traj
-from baselines.distributed_queue.impala import FIFOQueue
-from baselines.distributed_queue.impala import GlobalBuffer
+import tensorflow as tf
+import numpy as np
+
+import time
 
 flags = tf.app.flags
 FLAGS = tf.app.flags.FLAGS
 
-flags.DEFINE_integer('task', -1, "Task id. Use -1 for local training")
+flags.DEFINE_integer('task', -1, "Task id, Use -1 for local training")
 flags.DEFINE_enum('job_name',
                   'learner',
                   ['learner', 'actor'],
-                  'Job name. Ignore when task is set to -1')
+                  'Job name, Ignore when task is set to -1')
 
 def main(_):
 
-    num_actors = 8
+    num_actors = 3
     server_ip = 'localhost'
     server_port = 8000
     trajectory = 20
-    input_shape = [84, 84, 4]
-    num_action = 4
-    queue_size= 256
-    batch_size = 4
+    queue_size = 256
+    batch_size = 32
     buffer_size = 1e4
 
     local_job_device = f'/job:{FLAGS.job_name}/task:{FLAGS.task}'
@@ -47,21 +46,19 @@ def main(_):
         with tf.device('/cpu'):
             queue = FIFOQueue(
                     traj=trajectory,
-                    input_shape=input_shape,
-                    num_action=num_action,
-                    queue_size=queue_size,
                     batch_size=batch_size,
+                    queue_size=queue_size,
                     num_actors=num_actors)
 
 
-        learner = Agent(
+        learner = DroneAgent(
                 trajectory=trajectory,
                 model_name='learner',
                 learner_name='learner')
 
     with tf.device(local_job_device):
 
-        actor = Agent(
+        actor = DroneAgent(
                 trajectory=trajectory,
                 model_name=f'actor_{FLAGS.task}',
                 learner_name='learner')
@@ -76,36 +73,47 @@ def main(_):
 
         global_buffer = GlobalBuffer(
                 buffer_size=buffer_size)
-        writer = SummaryWriter('runs/learner')
 
         train_step = 0
+        writer = SummaryWriter('runs/learner')
 
         while True:
 
             size = queue.get_size()
             if size > batch_size:
                 sample_data = queue.sample_batch()
-                for i in range(len(sample_data.state)):
+                for i in range(len(sample_data.vector)):
                     global_buffer.append(
-                        state=sample_data.state[i],
-                        reward=sample_data.reward[i],
-                        action=sample_data.action[i],
-                        done=sample_data.done[i],
-                        mu=sample_data.mu[i])
+                            vector=sample_data.vector[i],
+                            front=sample_data.front[i],
+                            right=sample_data.right[i],
+                            back=sample_data.back[i],
+                            left=sample_data.left[i],
+                            raycast=sample_data.raycast[i],
+                            reward=sample_data.reward[i],
+                            done=sample_data.done[i],
+                            action=sample_data.action[i],
+                            mu=sample_data.mu[i])
 
             if len(global_buffer) > 3 * batch_size:
-                
+
                 train_step += 1
                 train_data = global_buffer.sample(batch_size)
-
                 s = time.time()
                 pi_loss, value_loss, ent, lr = learner.train(
-                        state=train_data.state,
+                        vector=train_data.vector,
+                        front=train_data.front,
+                        right=train_data.right,
+                        left=train_data.left,
+                        back=train_data.back,
+                        raycast=train_data.raycast,
                         reward=train_data.reward,
-                        action=train_data.action,
                         done=train_data.done,
+                        action=train_data.action,
                         behavior_policy=train_data.mu)
 
+                if train_step % 1000 == 0:
+                    learner.save_weights('saved/model', step=train_step)
                 print(f'train : {train_step}')
 
                 writer.add_scalar('data/time', time.time() - s, train_step)
@@ -114,16 +122,19 @@ def main(_):
                 writer.add_scalar('data/ent', ent, train_step)
                 writer.add_scalar('data/lr', lr, train_step)
                 writer.add_scalar('data/buffer', len(global_buffer), train_step)
+
     else:
 
         episode = 0
         score = 0
         episode_step = 0
         prob = 0
-        lives = 5
 
         writer = SummaryWriter(f'runs/{FLAGS.task}')
-        env = make_float_env("BreakoutDeterministic-v4")
+        env = Drone(
+                time_scale=0.1,
+                port=11000+FLAGS.task,
+                filename='/Users/chageumgang/Desktop/baselines/mac.app')
         state = env.reset()
 
         while True:
@@ -133,47 +144,49 @@ def main(_):
 
             for _ in range(trajectory):
 
-                action, behavior_policy, _ = actor.get_policy_and_action(state)
-                next_state, reward, done, info = env.step(action)
+                action, behavior_policy, _ = actor.get_policy_and_action(
+                        vector=state.vector, front=state.front,
+                        right=state.right, back=state.back,
+                        left=state.left, raycast=state.raycast)
+
+                next_state, reward, done = env.step(convert_action(action))
 
                 episode_step += 1
                 score += reward
                 prob += behavior_policy[action]
 
-                if lives != info['ale.lives']:
-                    r = -1
-                    d = True
-                else:
-                    r = reward
-                    d = False
-
                 unrolled_data.append(
-                    state=state, reward=r,
-                    action=action, done=d,
-                    mu=behavior_policy)
+                        vector=state.vector, front=state.front,
+                        right=state.right, back=state.back,
+                        left=state.left, raycast=state.raycast,
+                        reward=reward, done=done,
+                        action=action,
+                        mu=behavior_policy)
 
                 state = next_state
-                lives = info['ale.lives']
 
                 if done:
+
                     print(episode, score)
                     writer.add_scalar('data/score', score, episode)
                     writer.add_scalar('data/prob', prob / episode_step, episode)
                     writer.add_scalar('data/episode_step', episode_step, episode)
+
                     state = env.reset()
                     episode += 1
                     score = 0
                     episode_step = 0
                     prob = 0
-                    lives = 5
 
+
+            train_data = unrolled_data.sample()
             queue.append_to_queue(
-                    task=FLAGS.task,
-                    state=unrolled_data.state, reward=unrolled_data.reward,
-                    action=unrolled_data.action, done=unrolled_data.done,
-                    mu=unrolled_data.mu)
-
-
+                    task=FLAGS.task, vector=train_data.vector,
+                    front=train_data.front, right=train_data.right,
+                    back=train_data.back, left=train_data.left,
+                    raycast=train_data.raycast, reward=train_data.reward,
+                    done=train_data.done, action=train_data.action,
+                    mu=train_data.mu)
 
 if __name__ == '__main__':
     tf.app.run()

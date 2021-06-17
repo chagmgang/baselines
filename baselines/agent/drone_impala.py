@@ -156,8 +156,8 @@ class DroneAgent:
                 left=np.random.rand(*image_shape),
                 raycast=np.random.rand(*raycast_shape))
 
-    def save_weights(self, path):
-        self.saver.save(self.sess, path)
+    def save_weights(self, path, step):
+        self.saver.save(self.sess, path, global_step=step)
 
     def load_weights(self, path):
         self.saver.restore(self.sess, path)
@@ -176,7 +176,8 @@ class DroneAgent:
                     self.raycast: [raycast]})
 
         policy = policy[0]
-        action = np.random.choice(policy.shape[0], p=policy)
+        # action = np.random.choice(policy.shape[0], p=policy)
+        action = np.argmax(policy)
         return action, policy, policy[action]
 
     def parameter_sync(self):

@@ -117,12 +117,10 @@ def build_value_network(vector, front, right, back, left, raycast,
                         num_action):
 
     with tf.variable_scope('main'):
-
         main_q_value = value_network(
                 vector, front, right, back, left, raycast, num_action)
 
     with tf.variable_scope('main', reuse=tf.AUTO_REUSE):
-
         main_next_q_value = value_network(
                 next_vector, next_front, next_right,
                 next_back, next_left, next_raycast, num_action)
@@ -138,9 +136,10 @@ def build_value_network(vector, front, right, back, left, raycast,
 if __name__ == '__main__':
 
     input_shape = [36, 64, 3]
+    image_shape = [36, 64, 3]
     vector_shape = [10]
     raycast_shape = [16]
-    num_action = 27
+    num_action = 3
     trajectory = 20
 
     vector = tf.placeholder(tf.float32, shape=[None, *vector_shape])
@@ -157,10 +156,42 @@ if __name__ == '__main__':
     next_left = tf.placeholder(tf.float32, shape=[None, *input_shape])
     next_raycast = tf.placeholder(tf.float32, shape=[None, *raycast_shape])
 
-    build_value_network(
+    mq_value, mnq_value, tnq_value = build_value_network(
             vector, front, right, back, left, raycast,
             next_vector, next_front, next_right,
             next_back, next_left, next_raycast, num_action)
+
+    sess = tf.Session()
+    sess.run(tf.global_variables_initializer())
+
+    traj_vector = np.random.rand(10, *vector_shape)
+    traj_front = np.random.rand(10, *image_shape)
+    traj_right = np.random.rand(10, *image_shape)
+    traj_back = np.random.rand(10, *image_shape)
+    traj_left = np.random.rand(10, *image_shape)
+    traj_raycast = np.random.rand(10, *raycast_shape)
+
+    a, b, c = sess.run(
+            [mq_value, mnq_value, tnq_value],
+            feed_dict={
+                vector: traj_vector[:-1],
+                front: traj_front[:-1],
+                right: traj_right[:-1],
+                back: traj_back[:-1],
+                left: traj_left[:-1],
+                raycast: traj_raycast[:-1],
+
+                next_vector: traj_vector[1:],
+                next_front: traj_front[1:],
+                next_right: traj_right[1:],
+                next_back: traj_back[1:],
+                next_left: traj_left[1:],
+                next_raycast: traj_raycast[1:]})
+
+    print(a)
+    print(b)
+    print(c)
+
 
     '''
     batch_size = 1

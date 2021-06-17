@@ -91,7 +91,7 @@ def build_value_network(state, next_state, num_action):
 
 if __name__ == '__main__':
 
-    '''### test build_value_network function
+    ### test build_value_network function
     state = tf.placeholder(tf.float32, shape=[None, 84, 84, 4])
     next_state = tf.placeholder(tf.float32, shape=[None, 84, 84, 4])
     num_action = 4
@@ -114,6 +114,7 @@ if __name__ == '__main__':
     print(b)
     print(c)
 
+    '''
     ### test build_network function
     state = tf.placeholder(tf.float32, shape=[None, 84, 84, 4])
     traj_state = tf.placeholder(tf.float32, shape=[None, 20, 84, 84, 4])

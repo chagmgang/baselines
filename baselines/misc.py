@@ -3,6 +3,63 @@ import numpy as np
 
 import collections
 
+def convert_action(action):
+    if action == 0:
+        return [-1, -1, -1]
+    elif action == 1:
+        return [-1, -1,  0]
+    elif action == 2:
+        return [-1, -1,  1]
+    elif action == 3:
+        return [-1,  0, -1]
+    elif action == 4:
+        return [-1,  0,  0]
+    elif action == 5:
+        return [-1,  0,  1]
+    elif action == 6:
+        return [-1,  1, -1]
+    elif action == 7:
+        return [-1,  1,  0]
+    elif action == 8:
+        return [-1,  1,  1]
+    elif action == 9:
+        return [ 0, -1, -1]
+    elif action == 10:
+        return [ 0, -1,  0]
+    elif action == 11:
+        return [ 0, -1,  1]
+    elif action == 12:
+        return [ 0,  0, -1]
+    elif action == 13:
+        return [ 0,  0,  0]
+    elif action == 14:
+        return [ 0,  0,  1]
+    elif action == 15:
+        return [ 0,  1, -1]
+    elif action == 16:
+        return [ 0,  1,  0]
+    elif action == 17:
+        return [ 0,  1,  1]
+    elif action == 18:
+        return [ 1, -1, -1]
+    elif action == 19:
+        return [ 1, -1,  0]
+    elif action == 20:
+        return [ 1, -1,  1]
+    elif action == 21:
+        return [ 1,  0, -1]
+    elif action == 22:
+        return [ 1,  0,  0]
+    elif action == 23:
+        return [ 1,  0,  1]
+    elif action == 24:
+        return [ 1,  1, -1]
+    elif action == 25:
+        return [ 1,  1,  0]
+    elif action == 26:
+        return [ 1,  1,  1]
+
+
 def copy_src_to_dst(from_scope, to_scope):
     """Creates a copy variable weights operation
     Args:
