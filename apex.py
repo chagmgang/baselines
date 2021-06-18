@@ -29,7 +29,7 @@ def main(_):
     trajectory = 20
     queue_size = 256
     batch_size = 32
-    buffer_size = 1e4
+    buffer_size = 1e5
 
     local_job_device = f'/job:{FLAGS.job_name}/task:{FLAGS.task}'
     shared_job_device = '/job:learner/task:0'
@@ -119,6 +119,9 @@ def main(_):
                                  sample_data.reward[i, j],
                                  sample_data.done[i, j]])
 
+                        if buffer_step > buffer_size:
+                            buffer_step = buffer_size
+
             if buffer_step > 3 * batch_size:
 
                 train_step += 1
@@ -168,6 +171,7 @@ def main(_):
                 for i in range(len(idxs)):
                     replay_buffer.update(idxs[i], td_error[i])
 
+                print(f'train : {train_step}')
 
     else:
 
@@ -179,7 +183,7 @@ def main(_):
 
         writer = SummaryWriter(f'runs/{FLAGS.task}')
         env = Drone(
-                time_scale=0.1,
+                time_scale=0.05,
                 port=11000+FLAGS.task,
                 filename='/Users/chageumgang/Desktop/baselines/mac.app')
 

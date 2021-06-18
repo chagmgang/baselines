@@ -5,6 +5,8 @@ from mlagents_envs.side_channel.engine_configuration_channel import EngineConfig
 import numpy as np
 import mlagents.trainers
 
+import copy
+
 from collections import namedtuple
 
 obs = namedtuple(
@@ -57,7 +59,7 @@ class Drone(object):
                 right=self.right, back=self.back,
                 left=self.left, raycast=self.state[5])
 
-        return self.state
+        return copy.deepcopy(self.state)
 
     def step(self, action):
 
@@ -101,7 +103,7 @@ class Drone(object):
                 right=self.right, back=self.back,
                 left=self.left, raycast=self.state[5])
 
-        return self.state, reward, done
+        return copy.deepcopy(self.state), reward, done
 
 if __name__ == '__main__':
 
