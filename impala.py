@@ -23,7 +23,7 @@ flags.DEFINE_enum('job_name',
 
 def main(_):
 
-    num_actors = 3
+    num_actors = 1
     server_ip = 'localhost'
     server_port = 8000
     trajectory = 20
