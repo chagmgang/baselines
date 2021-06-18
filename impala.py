@@ -132,7 +132,7 @@ def main(_):
 
         writer = SummaryWriter(f'runs/{FLAGS.task}')
         env = Drone(
-                time_scale=0.1,
+                time_scale=0.05,
                 port=11000+FLAGS.task,
                 filename='/Users/chageumgang/Desktop/baselines/mac.app')
         state = env.reset()
