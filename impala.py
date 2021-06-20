@@ -23,7 +23,7 @@ flags.DEFINE_enum('job_name',
 
 def main(_):
 
-    num_actors = 1
+    num_actors = 3
     server_ip = 'localhost'
     server_port = 8000
     trajectory = 20
@@ -150,6 +150,7 @@ def main(_):
                         left=state.left, raycast=state.raycast)
 
                 next_state, reward, done = env.step(convert_action(action))
+
 
                 episode_step += 1
                 score += reward

@@ -176,8 +176,7 @@ class DroneAgent:
                     self.raycast: [raycast]})
 
         policy = policy[0]
-        # action = np.random.choice(policy.shape[0], p=policy)
-        action = np.argmax(policy)
+        action = np.random.choice(policy.shape[0], p=policy)
         return action, policy, policy[action]
 
     def parameter_sync(self):

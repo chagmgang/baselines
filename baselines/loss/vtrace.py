@@ -23,7 +23,7 @@ def log_probs_from_softmax_and_actions(policy_softmax, actions, action_size):
     '''
     onehot_action = tf.one_hot(actions, action_size)
     selected_softmax = tf.reduce_sum(policy_softmax * onehot_action, axis=2)
-    log_prob = tf.log(selected_softmax)
+    log_prob = tf.log(selected_softmax + 1e-8)
     return log_prob
 
 def from_softmax(behavior_policy_softmax, target_policy_softmax, actions, discounts,
@@ -119,7 +119,7 @@ def compute_baseline_loss(vs, value):
 
 def compute_entropy_loss(softmax):
     policy = softmax
-    log_policy = tf.log(softmax)
+    log_policy = tf.log(softmax + 1e-8)
     entropy_per_time_step = -policy * log_policy
     # entropy_per_time_step = tf.reduce_sum(entropy_per_time_step[:, 0], axis=1)
     entropy_per_time_step = tf.reduce_sum(entropy_per_time_step, axis=1)

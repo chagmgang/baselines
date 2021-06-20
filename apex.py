@@ -29,7 +29,7 @@ def main(_):
     trajectory = 20
     queue_size = 256
     batch_size = 32
-    buffer_size = 1e5
+    buffer_size = 1e4
 
     local_job_device = f'/job:{FLAGS.job_name}/task:{FLAGS.task}'
     shared_job_device = '/job:learner/task:0'
