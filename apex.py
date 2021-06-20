@@ -166,7 +166,7 @@ def main(_):
                     learner.target_to_main()
                 
                 if train_step % 1000 == 0:
-                    learner.save_weights('saved/model', step=train_step)
+                    learner.save_weights('saved_apex/model', step=train_step)
 
                 for i in range(len(idxs)):
                     replay_buffer.update(idxs[i], td_error[i])

@@ -113,7 +113,7 @@ def main(_):
                         behavior_policy=train_data.mu)
 
                 if train_step % 1000 == 0:
-                    learner.save_weights('saved/model', step=train_step)
+                    learner.save_weights('saved_impala/model', step=train_step)
                 print(f'train : {train_step}')
 
                 writer.add_scalar('data/time', time.time() - s, train_step)
