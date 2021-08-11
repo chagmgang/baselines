@@ -42,7 +42,7 @@ class DroneAgent:
                 self.b_ph = tf.placeholder(tf.float32, shape=[None, trajectory, num_action])
 
                 if reward_clipping == 'abs_one':
-                    self.clipped_r_ph = tf.clip_by_value(self.r_ph, -1.0, 1.0)
+                    self.clipped_r_ph = tf.clip_by_value(self.r_ph, -5.0, 5.0)
                 elif reward_clipping == 'softmax_asymmetric':
                     squeezed = tf.tanh(self.r_ph / 5.0)
                     self.clipped_r_ph = tf.where(self.r_ph < 0, .3 * squeezed, squeezed) * 5.

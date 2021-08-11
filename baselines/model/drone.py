@@ -35,7 +35,7 @@ def cnn(x, hidden):
     shape = x.get_shape()
 
     x = tf.layers.flatten(x)
-    x = fcn(x, [256], num_action=hidden, activation=None)
+    x = fcn(x, [128], num_action=hidden, activation=None)
     return x, [s.value for s in shape]
 
 

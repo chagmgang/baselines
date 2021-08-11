@@ -47,7 +47,10 @@ class Drone(object):
         self.back = np.zeros([36, 64, 3])
         self.left = np.zeros([36, 64, 3])
 
-        self.state = [self.dec.obs[i][0] for i in range(6)]
+        self.state = [self.dec.obs[i][0] for i in range(5)]
+
+        vector = self.state[0][:-7]
+        raycast = self.state[0][-7:]
 
         self.front[:, :, -1] = rgb2gray(self.state[1])
         self.right[:, :, -1] = rgb2gray(self.state[2])
@@ -55,9 +58,9 @@ class Drone(object):
         self.left[:, :, -1] = rgb2gray(self.state[4])
 
         self.state = obs(
-                vector=self.state[0], front=self.front,
+                vector=vector, front=self.front,
                 right=self.right, back=self.back,
-                left=self.left, raycast=self.state[5])
+                left=self.left, raycast=raycast)
 
         return copy.deepcopy(self.state)
 
@@ -86,12 +89,15 @@ class Drone(object):
         if done:
             return self.state, reward, done
 
-        self.state = [self.dec.obs[i][0] for i in range(6)]
+        self.state = [self.dec.obs[i][0] for i in range(5)]
 
         self.front[:, :, :-1] = self.front[:, :, 1:]
         self.right[:, :, :-1] = self.right[:, :, 1:]
         self.back[:, :, :-1] = self.back[:, :, 1:]
         self.left[:, :, :-1]  = self.left[:, :, 1:]
+
+        vector = self.state[0][:-7]
+        raycast = self.state[0][-7:]
 
         self.front[:, :, -1] = rgb2gray(self.state[1])
         self.right[:, :, -1] = rgb2gray(self.state[2])
@@ -99,9 +105,9 @@ class Drone(object):
         self.left[:, :, -1] = rgb2gray(self.state[4])
 
         self.state = obs(
-                vector=self.state[0], front=self.front,
+                vector=vector, front=self.front,
                 right=self.right, back=self.back,
-                left=self.left, raycast=self.state[5])
+                left=self.left, raycast=raycast)
 
         return copy.deepcopy(self.state), reward, done
 
@@ -112,7 +118,6 @@ if __name__ == '__main__':
     env = Drone(
             time_scale=0.1,
             filename='/Users/chageumgang/Desktop/baselines/mac.app')
-    
     episode = 0
     while True:
 
@@ -120,16 +125,17 @@ if __name__ == '__main__':
         done = False
         score = 0
         episode += 1
+        step = 0
 
         while not done:
 
             action = np.random.rand(3)
             next_state, reward, done = env.step(action)
+
             score += reward
 
-            print(next_state.vector.shape)
-            print(next_state.raycast.shape)
-            print(next_state.front.shape)
+            step += 1
+            print(step, np.sum(np.equal(state.front, next_state.front)), 36 * 64 * 3)
 
             '''
             fig = plt.figure()
@@ -144,7 +150,6 @@ if __name__ == '__main__':
             plt.show(block=False)
             plt.pause(0.1)
             '''
-
             state = next_state
 
         print(episode, score)

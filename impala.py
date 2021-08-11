@@ -23,13 +23,17 @@ flags.DEFINE_enum('job_name',
 
 def main(_):
 
-    num_actors = 3
+    num_actors = 2
     server_ip = 'localhost'
     server_port = 8000
     trajectory = 20
     queue_size = 256
     batch_size = 32
     buffer_size = 1e4
+
+    vector_shape = [19]
+    image_shape = [36, 64, 3]
+    raycast_shape = [7]
 
     local_job_device = f'/job:{FLAGS.job_name}/task:{FLAGS.task}'
     shared_job_device = '/job:learner/task:0'
@@ -46,6 +50,9 @@ def main(_):
         with tf.device('/cpu'):
             queue = FIFOQueue(
                     traj=trajectory,
+                    vector_shape=vector_shape,
+                    image_shape=image_shape,
+                    raycast_shape=raycast_shape,
                     batch_size=batch_size,
                     queue_size=queue_size,
                     num_actors=num_actors)
@@ -53,6 +60,9 @@ def main(_):
 
         learner = DroneAgent(
                 trajectory=trajectory,
+                vector_shape=vector_shape,
+                image_shape=image_shape,
+                raycast_shape=raycast_shape,
                 model_name='learner',
                 learner_name='learner')
 
@@ -60,6 +70,9 @@ def main(_):
 
         actor = DroneAgent(
                 trajectory=trajectory,
+                vector_shape=vector_shape,
+                image_shape=image_shape,
+                raycast_shape=raycast_shape,
                 model_name=f'actor_{FLAGS.task}',
                 learner_name='learner')
 
@@ -130,12 +143,16 @@ def main(_):
         episode_step = 0
         prob = 0
 
+        time_scale = 0.01
+        power = 1.0
+
         writer = SummaryWriter(f'runs/{FLAGS.task}')
         env = Drone(
-                time_scale=0.05,
+                time_scale=time_scale,
                 port=11000+FLAGS.task,
                 filename='/Users/chageumgang/Desktop/baselines/mac.app')
         state = env.reset()
+
 
         while True:
 
@@ -149,8 +166,8 @@ def main(_):
                         right=state.right, back=state.back,
                         left=state.left, raycast=state.raycast)
 
-                next_state, reward, done = env.step(convert_action(action))
-
+                next_state, reward, done = env.step(
+                        np.stack(convert_action(action)) * power)
 
                 episode_step += 1
                 score += reward
